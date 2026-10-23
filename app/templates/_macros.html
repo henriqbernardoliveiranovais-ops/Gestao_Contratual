@@ -1,0 +1,7 @@
+{% macro campo(f, classe="") %}
+  <div class="campo {{ classe }} {{ 'com-erro' if f.errors }}">
+    {{ f.label }}
+    {{ f(**kwargs) }}
+    {% for erro in f.errors %}<span class="erro">{{ erro }}</span>{% endfor %}
+  </div>
+{% endmacro %}

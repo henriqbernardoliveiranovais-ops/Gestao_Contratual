@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block titulo %}Painel Executivo de Gestão Contratual{% endblock %}
+
+{% block conteudo %}
+<section class="cabecalho">
+  <div>
+    <h1>Painel Executivo de Gestão Contratual</h1>
+    <p class="sub">Visão consolidada dos contratos, vencimentos, reajustes e tratativas em andamento.</p>
+  </div>
+  <div class="acoes">
+    <a id="btn-exportar" class="btn btn-sec" href="{{ url_for('main.exportar') }}">⬇ Exportar Excel</a>
+    <a class="btn" href="{{ url_for('main.novo_contrato') }}">+ Novo contrato</a>
+  </div>
+</section>
+
+{# ---------- Indicadores (clique abre o detalhamento) ---------- #}
+<section class="kpis">
+  <button class="kpi" data-detalhe="todos"><span class="kpi-rot">Total de contratos</span><span class="kpi-num">{{ kpi.total }}</span><span class="kpi-extra">{{ kpi.valor_total|moeda }}/mês{% if kpi.qtd_variavel %} + {{ kpi.qtd_variavel }} variáveis{% endif %}</span></button>
+  <button class="kpi kpi-ok" data-detalhe="em_dia"><span class="kpi-rot">Em dia</span><span class="kpi-num">{{ kpi.em_dia }}</span><span class="kpi-extra">status Finalizado</span></button>
+  <button class="kpi kpi-info" data-detalhe="tratativas"><span class="kpi-rot">Em tratativas</span><span class="kpi-num">{{ kpi.em_tratativas }}</span></button>
+  <button class="kpi kpi-erro" data-detalhe="vencidos"><span class="kpi-rot">Contratos vencidos</span><span class="kpi-num">{{ kpi.vencidos }}</span><span class="kpi-extra">em tratativa com fim já vencido</span></button>
+  <button class="kpi kpi-alerta" data-detalhe="trat_venc"><span class="kpi-rot">Próximos do vencimento</span><span class="kpi-num">{{ kpi.tratativa_vencimento }}</span><span class="kpi-extra">tratativa de vigência</span></button>
+  <button class="kpi kpi-alerta" data-detalhe="trat_reaj"><span class="kpi-rot">Próximos do reajuste</span><span class="kpi-num">{{ kpi.tratativa_reajuste }}</span><span class="kpi-extra">tratativa de reajuste</span></button>
+  <button class="kpi" data-detalhe="trat_outros"><span class="kpi-rot">Demais em tratativas</span><span class="kpi-num">{{ kpi.tratativa_outros }}</span><span class="kpi-extra">sem vigência/reajuste</span></button>
+</section>
+
+{# ---------- Gráficos de tratativas + índices ---------- #}
+<section class="grade-3">
+  <div class="card card-grafico">
+    <h3 class="titulo-grafico">Contratos em Tratativas de Vencimento</h3>
+    <div class="grafico"><canvas id="grafico-vencimento"></canvas></div>
+    <div class="total-grafico">Total Contratos em Tratativas de Vencimento: {{ kpi.tratativa_vencimento }}</div>
+  </div> 
+  <div class="card card-grafico">
+    <h3 class="titulo-grafico">Contratos em Tratativas de Reajuste</h3>
+    <div class="grafico"><canvas id="grafico-reajuste"></canvas></div>
+    <div class="total-grafico">Total Contratos em Tratativas de Reajuste: {{ kpi.tratativa_reajuste }}</div>
+  </div>
+  <div class="card">
+    <h3>Evolução dos índices – IPCA x IGP-M x IPC/FIPE</h3>
+    <p class="card-sub">Variação acumulada em 12 meses (%) · IPC/FIPE = alimentação fora do domicílio</p>
+    {% if indices_json %}
+      <div class="grafico"><canvas id="grafico-indices"></canvas></div>
+    {% else %}
+      <div class="vazio">Nenhum índice cadastrado. <a href="{{ url_for('main.indices') }}">Cadastrar índices</a></div>
+    {% endif %}
+  </div>
+</section>
+
+{# ---------- Filtros ---------- #}
+<section class="card filtros">
+  <label>Parceiro
+    <select id="f-parceiro"><option value="">Todos</option>{% for p in parceiros %}<option>{{ p }}</option>{% endfor %}</select>
+  </label>
+  <label>Unidade
+    <select id="f-unidade"><option value="">Todas</option>{% for u in unidades %}<option>{{ u }}</option>{% endfor %}</select>
+  </label>
+  <label>Status
+    <select id="f-status"><option value="">Todos</option>{% for s in status_opcoes %}<option>{{ s }}</option>{% endfor %}</select>
+  </label>
+  <label>Mês
+    <select id="f-mes"><option value="">Todos</option>{% for m in meses_usados %}<option>{{ m }}</option>{% endfor %}</select>
+  </label>
+  <label class="busca">Buscar
+    <input id="f-busca" type="search" placeholder="Parceiro, unidade, status, obs…">
+  </label>
+  <button id="f-limpar" class="btn btn-sec" type="button">Limpar filtros</button>
+</section>
+
+{# ---------- Tabela analítica ---------- #}
+<section class="card">
+  <div class="tabela-topo">
+    <h3>Tabela analítica de contratos</h3>
+    <span class="card-sub"><strong id="contador">0</strong> contratos exibidos</span>
+  </div>
+  <div class="tabela-wrap">
+    <table class="tabela" id="tabela">
+      <thead>
+        <tr>
+          <th data-col="mes">Mês</th><th data-col="unidade">Unidade</th><th data-col="parceiro">Parceiro</th>
+          <th data-col="inicio">Início</th><th data-col="fim">Fim</th><th data-col="reajuste">Reajuste</th>
+          <th data-col="status">Status</th><th data-col="observacao">Observação</th><th data-col="objeto">Objeto</th>
+          <th data-col="tipo_contrato">Tipo de contrato</th><th data-col="valor_mensal" class="num">Valor mensal</th><th></th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+  {% if not contratos_json %}
+    <div class="vazio">Nenhum contrato ainda. <a href="{{ url_for('main.novo_contrato') }}">Cadastre um</a>.</div>
+  {% endif %}
+</section>
+
+{# ---------- Janela de detalhamento ---------- #}
+<dialog id="modal" class="modal">
+  <div class="modal-topo">
+    <h3 id="modal-titulo">Detalhamento dos contratos</h3>
+    <button class="fechar" type="button" aria-label="Fechar">×</button>
+  </div>
+  <div id="modal-corpo" class="modal-corpo"></div>
+</dialog>
+
+<script id="dados-contratos" type="application/json">{{ contratos_json|tojson }}</script>
+<script id="dados-indices" type="application/json">{{ indices_json|tojson }}</script>
+<script>
+  window.URLS = {
+    editar: "{{ url_for('main.editar_contrato', contrato_id=0) }}",
+    exportar: "{{ url_for('main.exportar') }}"
+  };
+</script>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/vendor/chart.umd.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}

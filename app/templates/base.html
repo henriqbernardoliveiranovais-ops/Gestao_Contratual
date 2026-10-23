@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titulo %}Gestão Contratual{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <header class="topo">
+    <div class="topo-inner">
+           <a class="marca" href="{{ url_for('main.dashboard') }}">
+        <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Facilities Gente & Gestão"
+             style="height: 44px; display: block; background: #fff; padding: 4px 10px; border-radius: 6px;">
+      </a>
+      <nav class="menu">
+        {% set ep = request.endpoint %}
+        <a href="{{ url_for('main.dashboard') }}" class="{{ 'ativo' if ep == 'main.dashboard' }}">Painel</a>
+        <a href="{{ url_for('main.novo_contrato') }}" class="{{ 'ativo' if ep in ['main.novo_contrato', 'main.editar_contrato'] }}">Cadastrar contrato</a>
+        <a href="{{ url_for('main.indices') }}" class="{{ 'ativo' if ep == 'main.indices' }}">Índices</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="conteudo">
+    {% with mensagens = get_flashed_messages(with_categories=true) %}
+      {% for categoria, msg in mensagens %}
+        <div class="flash flash-{{ categoria }}">{{ msg }}</div>
+      {% endfor %}
+    {% endwith %}
+    {% block conteudo %}{% endblock %}
+  </main>
+
+  {% block scripts %}{% endblock %}
+</body>
+</html>

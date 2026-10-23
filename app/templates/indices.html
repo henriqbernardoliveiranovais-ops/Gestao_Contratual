@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% from "_macros.html" import campo %}
+{% block titulo %}Índices · Gestão Contratual{% endblock %}
+
+{% block conteudo %}
+<section class="cabecalho">
+  <div>
+    <h1>Índices de reajuste</h1>
+    <p class="sub">Variação acumulada em 12 meses de IPCA, IGP-M e IPC/FIPE. O gráfico do painel mostra os últimos 12 meses cadastrados.</p>
+  </div>
+</section>
+
+<div class="grade-2">
+  <form method="post" class="card formulario" novalidate>
+    {{ form.hidden_tag() }}
+    <h3>Lançar / atualizar mês</h3>
+    <div class="linha">{{ campo(form.mes) }}{{ campo(form.ano) }}</div>
+    <div class="linha">
+      {{ campo(form.ipca, inputmode="decimal", placeholder="Ex.: 4,52") }}
+      {{ campo(form.igpm, inputmode="decimal") }}
+      {{ campo(form.ipc_fipe, inputmode="decimal") }}
+    </div>
+    <p class="dica">Se o mês já existir, os valores são atualizados.</p>
+    <div class="form-acoes"><span class="espaco"></span><button class="btn" type="submit">Salvar</button></div>
+  </form>
+
+  <div class="card">
+    <h3>Meses cadastrados</h3>
+    {% if lista %}
+    <div class="lista-rolagem alta">
+      <table class="mini">
+        <thead><tr><th>Mês/ano</th><th class="num">IPCA</th><th class="num">IGP-M</th><th class="num">IPC/FIPE</th><th></th></tr></thead>
+        <tbody>
+          {% for i in lista %}
+          <tr>
+            <td>{{ '%02d' % i.mes }}/{{ i.ano }}</td>
+            <td class="num">{{ i.ipca if i.ipca is not none else '-' }}</td>
+            <td class="num">{{ i.igpm if i.igpm is not none else '-' }}</td>
+            <td class="num">{{ i.ipc_fipe if i.ipc_fipe is not none else '-' }}</td>
+            <td>
+              <form method="post" action="{{ url_for('main.excluir_indice', indice_id=i.id) }}" onsubmit="return confirm('Excluir este mês?');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button class="link-excluir" type="submit" title="Excluir">✕</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+      <div class="vazio">Nenhum mês cadastrado ainda.</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

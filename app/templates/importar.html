@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% from "_macros.html" import campo %}
+{% block titulo %}Importar planilha · Gestão Contratual{% endblock %}
+
+{% block conteudo %}
+<section class="cabecalho">
+  <div>
+    <h1>Importar planilha</h1>
+    <p class="sub">Carregue a planilha Base_Dashboard (.xlsx). A aba <strong>Base_Contratos</strong> alimenta os contratos e a aba <strong>Base_Indices</strong>, se existir, atualiza os índices.</p>
+  </div>
+  <div class="acoes"><a class="btn btn-sec" href="{{ url_for('main.modelo_planilha') }}">⬇ Baixar modelo</a></div>
+</section>
+
+<div class="grade-2">
+  <form method="post" enctype="multipart/form-data" class="card formulario" novalidate>
+    {{ form.hidden_tag() }}
+    {{ campo(form.arquivo, accept=".xlsx,.xls") }}
+    <div class="campo">
+      {{ form.modo.label }}
+      {% for opcao in form.modo %}
+        <label class="radio">{{ opcao() }} {{ opcao.label.text }}</label>
+      {% endfor %}
+      <span class="dica">"Substituir" apaga os contratos que vieram de planilha (e os de exemplo); os cadastrados pelo portal ficam.</span>
+    </div>
+    <div class="form-acoes"><span class="espaco"></span><button class="btn" type="submit">Importar</button></div>
+  </form>
+
+  <div class="card">
+    <h3>Colunas reconhecidas</h3>
+    <p class="card-sub">Obrigatórias: <strong>Unidade</strong> e <strong>Parceiro</strong>. As demais são opcionais.</p>
+    <table class="mini">
+      <tbody>
+        <tr><td>Mês</td><td>Unidade</td><td>Parceiro</td></tr>
+        <tr><td>Objeto</td><td>Valor Mensal</td><td>Aviso Prévio</td></tr>
+        <tr><td>Início</td><td>Fim</td><td>Tratativa Vigencia</td></tr>
+        <tr><td>Mês/Ano - Reajuste</td><td>Tratativa Reajuste</td><td>Inicio das Tratativas</td></tr>
+        <tr><td>Status</td><td>Observação</td><td>Tipo de Contrato</td></tr>
+      </tbody>
+    </table>
+    <p class="dica">Datas em dd/mm/aaaa ou formato de data do Excel. Valor Mensal aceita número ou "Variável". Tratativas: Sim/Não.</p>
+  </div>
+</div>
+
+{% if resumo %}
+<section class="card">
+  <h3>Resultado da importação</h3>
+  <p><strong>{{ resumo.importados }}</strong> contratos importados da aba <strong>{{ resumo.aba }}</strong>{% if resumo.indices %} e <strong>{{ resumo.indices }}</strong> meses de índices atualizados{% endif %}.</p>
+  <p class="card-sub">Colunas usadas:
+    {% for col, campo_ in resumo.mapeadas.items() %}<span class="selo selo-info">{{ col }} → {{ campo_ }}</span> {% endfor %}
+  </p>
+  {% if resumo.ignoradas %}
+    <p class="card-sub">Colunas ignoradas (nome não reconhecido):
+      {% for col in resumo.ignoradas %}<span class="selo selo-alerta">{{ col }}</span> {% endfor %}
+    </p>
+  {% endif %}
+  {% if resumo.avisos %}
+    <p class="card-sub">Avisos (as linhas foram importadas, mas confira):</p>
+    <ul class="lista-erros">{% for e in resumo.avisos %}<li>{{ e }}</li>{% endfor %}</ul>
+  {% endif %}
+  <a class="btn" href="{{ url_for('main.dashboard') }}">Ver no painel</a>
+</section>
+{% endif %}
+{% endblock %}

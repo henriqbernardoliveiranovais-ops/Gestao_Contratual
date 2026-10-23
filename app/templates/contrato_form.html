@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% from "_macros.html" import campo %}
+{% block titulo %}{{ titulo }} · Gestão Contratual{% endblock %}
+
+{% block conteudo %}
+<section class="cabecalho">
+  <div>
+    <h1>{{ titulo }}</h1>
+    <p class="sub">
+      {% if contrato %}Alterando o contrato com <strong>{{ contrato.parceiro }}</strong> — cadastrado em {{ contrato.criado_em|data_br }}{% if contrato.origem == 'planilha' %} (veio da planilha){% endif %}.
+      {% else %}Os dados entram direto no painel assim que você salvar.{% endif %}
+    </p>
+  </div>
+  <div class="acoes"><a class="btn btn-sec" href="{{ url_for('main.dashboard') }}">← Voltar ao painel</a></div>
+</section>
+
+<form method="post" class="card formulario" novalidate>
+  {{ form.hidden_tag() }}
+
+  <fieldset>
+    <legend>Identificação</legend>
+    <div class="linha">
+      {{ campo(form.parceiro, "largo", placeholder="Nome do parceiro/fornecedor", list="lista-parceiros", autofocus=True) }}
+      {{ campo(form.unidade, placeholder="Ex.: Matriz", list="lista-unidades") }}
+      {{ campo(form.mes) }}
+    </div>
+    <div class="linha">
+      {{ campo(form.objeto, "largo", rows=2, placeholder="Ex.: Lavanderia/Locação de Uniformes") }}
+      {{ campo(form.tipo_contrato) }}
+    </div>
+    <div class="linha">
+      {{ campo(form.valor_mensal, placeholder="0,00", inputmode="decimal") }}
+      {{ campo(form.valor_variavel, "check") }}
+      {{ campo(form.aviso_previo) }}
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Vigência e reajuste</legend>
+    <div class="linha">
+      {{ campo(form.inicio) }}
+      {{ campo(form.fim) }}
+      {{ campo(form.tratativa_vigencia) }}
+    </div>
+    <div class="linha">
+      {{ campo(form.reajuste) }}
+      {{ campo(form.tratativa_reajuste) }}
+      <div class="campo"></div>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Andamento</legend>
+    <div class="linha">
+      {{ campo(form.status) }}
+      {{ campo(form.inicio_tratativas) }}
+      <div class="campo"></div>
+    </div>
+    <div class="linha">
+      {{ campo(form.observacao, "largo", rows=3, placeholder="Ex.: Parceiro - Aguardando o envio da minuta contratual.") }}
+    </div>
+  </fieldset>
+
+  <div class="form-acoes">
+    {% if contrato %}
+      <button class="btn btn-perigo" type="submit" form="form-excluir">Excluir contrato</button>
+    {% endif %}
+    <span class="espaco"></span>
+    {% if not contrato %}
+      <button class="btn btn-sec" type="submit" name="acao" value="salvar_e_novo">Salvar e cadastrar outro</button>
+    {% endif %}
+    <button class="btn" type="submit" name="acao" value="salvar">Salvar</button>
+  </div>
+</form>
+
+{% if contrato %}
+<form id="form-excluir" method="post" action="{{ url_for('main.excluir_contrato', contrato_id=contrato.id) }}"
+      onsubmit="return confirm('Excluir este contrato? Essa ação não pode ser desfeita.');">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+</form>
+{% endif %}
+
+{# sugestões para não digitar nomes diferentes para o mesmo parceiro/unidade #}
+<datalist id="lista-parceiros">{% for p in sugestoes_parceiros %}<option value="{{ p }}">{% endfor %}</datalist>
+<datalist id="lista-unidades">{% for u in sugestoes_unidades %}<option value="{{ u }}">{% endfor %}</datalist>
+
+<script>
+  // "Valor variável" marcado: o campo de valor fica bloqueado e vazio
+  (function () {
+    const chk = document.getElementById("valor_variavel");
+    const valor = document.getElementById("valor_mensal");
+    function alternar() { valor.disabled = chk.checked; if (chk.checked) valor.value = ""; }
+    chk.addEventListener("change", alternar);
+    alternar();
+  })();
+</script>
+{% endblock %}
